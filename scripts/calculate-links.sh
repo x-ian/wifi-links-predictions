@@ -10,7 +10,7 @@ SPLAT_CONFIG_FILE=$3
 
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-ls -1 $SITES_DIR > _tmp_sites.txt
+#ls -1 $SITES_DIR > _tmp_sites.txt
 RX_SITES_LIST=$(realpath _tmp_sites.txt)
 
 while IFS= read -r tx_site || [ "$tx_site" ]; do
@@ -43,4 +43,4 @@ while IFS= read -r tx_site || [ "$tx_site" ]; do
 	
 done < $TX_SITES_FILE
 
-rm $RX_SITES_LIST
+#rm $RX_SITES_LIST
