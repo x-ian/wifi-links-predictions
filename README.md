@@ -1,6 +1,5 @@
 # wifi-links-predictions
 
-
 # Install & prepare SPLAT
 
 # Prepare / unify site list
