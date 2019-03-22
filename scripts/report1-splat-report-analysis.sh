@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# find . -type f -name '*-to-*.txt' -exec ../splat-report-analysis.sh {} \;
 # find . -type f -name '*-to-*.txt' -exec ../scripts/report1-splat-report-analysis.sh {} \;
 
 # number of analysed connections (within 100 km)

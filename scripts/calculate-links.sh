@@ -6,11 +6,11 @@
 TX_SITES_FILE=$1
 SITES_DIR=$(realpath $2)
 OUTPUT_DIR=$(realpath .)
-SPLAT_CONFIG_FILE=$3
+SPLAT_CONFIG_FILE=$(realpath $3)
 
 BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-#ls -1 $SITES_DIR > _tmp_sites.txt
+ls -1 $SITES_DIR > _tmp_sites.txt
 RX_SITES_LIST=$(realpath _tmp_sites.txt)
 
 while IFS= read -r tx_site || [ "$tx_site" ]; do
@@ -36,6 +36,16 @@ while IFS= read -r tx_site || [ "$tx_site" ]; do
 		# filtering out all sites further than 60 miles away
 		if (( $(echo "$DIST < 60 && $DIST >0" | bc -l) )); then
 			timeout 30s $BASEDIR/splat.sh $SITES_DIR/$tx_site $SITES_DIR/$line
+			
+			# get the other direction
+			pushd .
+			cd ..
+			mkdir $line
+			cd $line
+			cp $SPLAT_CONFIG_FILE ./splat.lrp
+			timeout 30s $BASEDIR/splat.sh $SITES_DIR/$line $SITES_DIR/$tx_site 
+			popd
+			
 		fi
 	done < $RX_SITES_LIST
 

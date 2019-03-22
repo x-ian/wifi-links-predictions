@@ -4,14 +4,14 @@
 
 #find . -type f -name 'file_*' -exec ../scripts/report3-kml-good-links.sh {} kml \;
 
+OUTFILE=$1
+WHERE=$2
 
-FILE=$1
-OUTPUT_DIR=$2
-OUTFILE=$OUTPUT_DIR/$FILE.kml
+# all tower links
+# where (tx like 'T-%' or tx like 'Tn-%') and (rx like 'T-%' or rx like 'Tn-%') and cast(RX_SIGNAL_POWER as signed) > -100 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1') 
 
-echo "Processing file $FILE"
-
-# echo "$FILE;$TX;$RX;$DISTANCE;$PATH_LOSS_FREE_SPACE;$PATH_LOSS_ITWOM;$RX_SIGNAL_POWER;$FRESNEL_NOTCLEAR;$FRESNEL_CLEAR_HEIGHT;$FRESNEL60_NOTCLEAR;$FRESNEL60_CLEAR_HEIGHT;$LOS_NOTCLEAR;$LOS_CLEAR_HEIGHT;$TX_LAT;$TX_LNG;$RX_LAT;$RX_LNG" >> data.csv
+# just mbangombe
+# where (tx = 'T-Mbangombe') and cast(RX_SIGNAL_POWER as signed) > -100 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1' or los_notclear<>'1') 
 
 echo '<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -94,55 +94,50 @@ echo "	<name>$1</name>" >>$OUTFILE
 echo '	<open>1</open>
 ' >>$OUTFILE
 	
-while IFS= read -r line ||  [ "$line" ]; do
-	TX=$(echo $line | cut -f2 -d';')
-	TX_LAT=$(echo $line | cut -f14 -d';')
-	TX_LNG=$(echo $line | cut -f15 -d';')
-	RX=$(echo $line | cut -f3 -d';')
-	RX_LAT=$(echo $line | cut -f16 -d';')
-	RX_LNG=$(echo $line | cut -f17 -d';')
+	
+	
+mysql -u root -ppassword bht-scaleup -b --raw --skip-column-names   >> $OUTFILE <<EOF
+-- (select rx, rx_lat, rx_lng from data $2)
+-- union
+-- (select distinct(tx), max(tx_lat), max(tx_lng) from data $2 )
 
-	PATH_LOSS_FREE_SPACE=$(echo $line | cut -f5 -d';')
-	PATH_LOSS_ITWOM=$(echo $line | cut -f6 -d';')
-	RX_SIGNAL_POWER=$(echo $line | cut -f7 -d';')
-
-	LOS_NOTCLEAR=$(echo $line | cut -f12 -d';')
-	FRESNEL_NOTCLEAR=$(echo $line | cut -f8 -d';')
-	FRESNEL60_NOTCLEAR=$(echo $line | cut -f10 -d';')
-
-	if (( $(echo "$RX_SIGNAL_POWER > -100" | bc -l) )); then
-		if [[ ($FRESNEL60_NOTCLEAR -eq "0") ]]; then
-			# all good , color green
-			echo "
+select 
+concat('
 	<Placemark>
-		<name>$RX fresnel60+: $RX_SIGNAL_POWER</name>
-		<styleUrl>#msn_ylw-pushpin</styleUrl>
+		<name>', d.rx, '</name>
+		<Point>
+		<extrude>1</extrude>
+			<coordinates>
+				',d.rx_lng, ',', d.rx_lat, ',0
+			</coordinates>
+		</Point>
+	</Placemark>')
+				
+from 
+((select distinct(rx), max(rx_lat) as rx_lat, max(rx_lng) as rx_lng from data $2 group by rx)
+ ) as d;
+EOF
+	
+mysql -u root -ppassword bht-scaleup -b --raw --skip-column-names   >> $OUTFILE <<EOF
+select 
+concat('
+	<Placemark>
+		<name>', tx, ' to ', rx, ': ', rx_signal_power, IF(fresnel_notclear<>'1' or fresnel60_notclear<>'1', ' (fresnel60 clear)', ' (only LOS'),'</name>
+		<styleUrl>', IF(fresnel_notclear<>'1' or fresnel60_notclear<>'1', '#msn_ylw-pushpin', '#m_ylw-pushpin'),'</styleUrl>
 		<LineString>
 			<tessellate>1</tessellate>
 			<coordinates>
-				$TX_LNG,$TX_LAT,0 $RX_LNG,$RX_LAT,0
+				',tx_lng, ',', tx_lat, ',0 ', rx_lng, ',', rx_lat, ',0
 			</coordinates>
 		</LineString>
-	</Placemark>" >>$OUTFILE
-		elif [[ $LOS_NOTCLEAR -eq "0" ]]; then
-			# only LOS, challenging color yellow
-			echo "
-	<Placemark>
-		<name>$RX only los: $RX_SIGNAL_POWER</name>
-		<styleUrl>#m_ylw-pushpin</styleUrl>
-		<LineString>
-			<tessellate>1</tessellate>
-			<coordinates>
-				$TX_LNG,$TX_LAT,0 $RX_LNG,$RX_LAT,0
-			</coordinates>
-		</LineString>
-	</Placemark>" >>$OUTFILE
-		fi		
-	fi
-done < $FILE
+	</Placemark>')
+				
+from data 
+ $2
+order by tx, cast(RX_SIGNAL_POWER as signed) DESC
+;
+EOF
 
 echo "</Folder>
 </Document>
 </kml>" >>$OUTFILE
-
-echo "Done Processing file $FILE"

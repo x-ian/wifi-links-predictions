@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# find . -type d -name '*.qth' -exec ../report2-mysql-summary.sh {} \;
+# rm report2a-mysql-summary.tsv && find . -type d -name '*.qth' -exec ../scripts/report2a-mysql-summary.sh {} \;
 
 FILE=$1
 FILEBASE=`basename $FILE`
@@ -8,7 +8,7 @@ SITE=`echo "${FILEBASE%%.*}"`
 
 summary-for-one() {
 	
-mysql -u root -ppassword bht-scaleup -b --skip-column-names <<EOF
+mysql -u root -ppassword bht-scaleup  --skip-column-names -b >>report2a-mysql-summary.tsv 2>/dev/null <<EOF
 set @site:="$1";
 select
 @site,
