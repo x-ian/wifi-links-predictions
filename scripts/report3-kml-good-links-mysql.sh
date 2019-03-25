@@ -6,12 +6,16 @@
 
 OUTFILE=$1
 WHERE=$2
+WITH_PINS=$3
 
-# all tower links
-# where (tx like 'T-%' or tx like 'Tn-%') and (rx like 'T-%' or rx like 'Tn-%') and cast(RX_SIGNAL_POWER as signed) > -100 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1') 
+# all tower links LOS and better
+# ../scripts/report3-kml-good-links-mysql.sh links-pins-t-tn.kml "where (tx like 'T-%' or tx like 'Tn-%') and (rx like 'T-%' or rx like 'Tn-%') and cast(RX_SIGNAL_POWER as signed) > -105 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1' or los_notclear<>'1') "
 
-# just mbangombe
-# where (tx = 'T-Mbangombe') and cast(RX_SIGNAL_POWER as signed) > -100 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1' or los_notclear<>'1') 
+# just mbangombe LOS and better
+# ../scripts/report3-kml-good-links-mysql.sh links-pins-t-mbangombe.kml "where (tx = 'T-Mbangombe') and cast(RX_SIGNAL_POWER as signed) > -105 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1' or los_notclear<>'1') "
+
+# all links LOS and better
+# ../scripts/report3-kml-good-links-mysql.sh links-all.kml "where cast(RX_SIGNAL_POWER as signed) > -105 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1' or los_notclear<>'1') " without-pins
 
 echo '<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -95,7 +99,8 @@ echo '	<open>1</open>
 ' >>$OUTFILE
 	
 	
-	
+#if ! [[ "$3" -eq "without-pins" ]]; then
+if [ -z "$3" ]; then
 mysql -u root -ppassword bht-scaleup -b --raw --skip-column-names   >> $OUTFILE <<EOF
 -- (select rx, rx_lat, rx_lng from data $2)
 -- union
@@ -114,10 +119,11 @@ concat('
 	</Placemark>')
 				
 from 
-((select distinct(rx), max(rx_lat) as rx_lat, max(rx_lng) as rx_lng from data $2 group by rx)
+((select distinct(rx), max(rx_lat) as rx_lat, max(rx_lng) as rx_lng from data_apzu $2 group by rx)
  ) as d;
 EOF
-	
+fi
+
 mysql -u root -ppassword bht-scaleup -b --raw --skip-column-names   >> $OUTFILE <<EOF
 select 
 concat('
@@ -132,7 +138,7 @@ concat('
 		</LineString>
 	</Placemark>')
 				
-from data 
+from data_apzu
  $2
 order by tx, cast(RX_SIGNAL_POWER as signed) DESC
 ;

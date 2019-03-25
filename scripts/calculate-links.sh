@@ -2,6 +2,13 @@
 
 # ../scripts/calculate-links.sh ./input ../t/ ../splat-bht-scaleup.lrp
 
+if [ "$#" -ne 3 ]; then
+	echo "Wrong parameters."
+	echo "Usage calculate-links.sh <locations text file> <splat locations dir> <splat config file"
+	echo ""
+	exit 0
+fi
+
 # text file with list of sites to be processed as TX
 TX_SITES_FILE=$1
 SITES_DIR=$(realpath $2)
@@ -17,7 +24,7 @@ while IFS= read -r tx_site || [ "$tx_site" ]; do
 
 	TX_OUTPUT_DIR=$OUTPUT_DIR/$tx_site
 
-	rm -rf $TX_OUTPUT_DIR
+	#rm -rf $TX_OUTPUT_DIR
 	mkdir $TX_OUTPUT_DIR
 	cp $SPLAT_CONFIG_FILE $TX_OUTPUT_DIR/splat.lrp
 	

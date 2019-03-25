@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ "$#" -ne 2 ]; then
+	echo "Wrong parameters."
+	echo "Usage create-splat-sites-from-csv.sh <csv site locations file> <outdir dir>"
+	echo ""
+	exit 0
+fi
+
 ALL_SITES_CSV=$1
 OUTPUT_DIR=$2
 

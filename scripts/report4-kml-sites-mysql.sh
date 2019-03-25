@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# ../scripts/report4-kml-sites-mysql.sh all-sites.kml
-# ../scripts/report4-kml-sites-mysql.sh f-sites.kml " where tx like 'F-%'"
-# ../scripts/report4-kml-sites-mysql.sh fn-sites.kml " where tx like 'Fn-%'"
-# ../scripts/report4-kml-sites-mysql.sh tn-sites.kml " where tx like 'Tn-%'"
-# ../scripts/report4-kml-sites-mysql.sh t-sites.kml " where tx like 'T-%'"
+# ../scripts/report4-kml-sites-mysql.sh pins-all.kml
+# ../scripts/report4-kml-sites-mysql.sh pins-f.kml " where tx like 'F-%'"
+# ../scripts/report4-kml-sites-mysql.sh pins-fn.kml " where tx like 'Fn-%'"
+# ../scripts/report4-kml-sites-mysql.sh pins-tn.kml " where tx like 'Tn-%'"
+# ../scripts/report4-kml-sites-mysql.sh pins-t.kml " where tx like 'T-%'"
 
 OUTFILE=$1
 WHERE=$2
