@@ -4,9 +4,21 @@
 
 #find . -type f -name 'file_*' -exec ../scripts/report3-kml-good-links.sh {} kml \;
 
+if ! [[ ("$#" -eq 2) || ("$#" -eq 3) ]]; then
+	echo "Wrong parameters."
+	echo "Usage report3-kml-good-links-mysql.sh <output file> <SQL where query> [empty|without-pins]"
+	echo ""
+	exit 0
+fi
+
 OUTFILE=$1
 WHERE=$2
 WITH_PINS=$3
+
+MYSQL_INSTANCE=bht-scaleup
+MYSQL_TABLE=data
+#MYSQL_INSTANCE=evr
+#MYSQL_TABLE=wifi_links_data
 
 # all tower links LOS and better
 # ../scripts/report3-kml-good-links-mysql.sh links-pins-t-tn.kml "where (tx like 'T-%' or tx like 'Tn-%') and (rx like 'T-%' or rx like 'Tn-%') and cast(RX_SIGNAL_POWER as signed) > -105 and (fresnel_notclear<>'1' or fresnel60_notclear<>'1' or los_notclear<>'1') "
@@ -101,10 +113,10 @@ echo '	<open>1</open>
 	
 #if ! [[ "$3" -eq "without-pins" ]]; then
 if [ -z "$3" ]; then
-mysql -u root -ppassword bht-scaleup -b --raw --skip-column-names   >> $OUTFILE <<EOF
--- (select rx, rx_lat, rx_lng from data $2)
+mysql -u root -ppassword $MYSQL_INSTANCE -b --raw --skip-column-names   >> $OUTFILE <<EOF
+-- (select rx, rx_lat, rx_lng from $MYSQL_TABLE $2)
 -- union
--- (select distinct(tx), max(tx_lat), max(tx_lng) from data $2 )
+-- (select distinct(tx), max(tx_lat), max(tx_lng) from $MYSQL_TABLE $2 )
 
 select 
 concat('
@@ -119,12 +131,12 @@ concat('
 	</Placemark>')
 				
 from 
-((select distinct(rx), max(rx_lat) as rx_lat, max(rx_lng) as rx_lng from data_apzu $2 group by rx)
+((select distinct(rx), max(rx_lat) as rx_lat, max(rx_lng) as rx_lng from $MYSQL_TABLE $2 group by rx)
  ) as d;
 EOF
 fi
 
-mysql -u root -ppassword bht-scaleup -b --raw --skip-column-names   >> $OUTFILE <<EOF
+mysql -u root -ppassword $MYSQL_INSTANCE -b --raw --skip-column-names   >> $OUTFILE <<EOF
 select 
 concat('
 	<Placemark>
@@ -138,7 +150,7 @@ concat('
 		</LineString>
 	</Placemark>')
 				
-from data_apzu
+from $MYSQL_TABLE
  $2
 order by tx, cast(RX_SIGNAL_POWER as signed) DESC
 ;
